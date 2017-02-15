@@ -42,7 +42,7 @@
     - Ruby (with bundix)
     - Javascript (with node2nix)
     - Rust
-    - Python (pypy2nix)
+    - Python (pypi2nix)
     - Go (go2nix)
 
 ## NixOS
