@@ -1,0 +1,359 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>01 - Introduction</title>
+
+		<link rel="stylesheet" href="../lib/reveal-js/css/reveal.css">
+		<link rel="stylesheet" href="../lib/reveal-js/css/theme/white.css">
+
+		<!-- Theme used for syntax highlighting of code -->
+		<link rel="stylesheet" href="../lib/reveal-js/lib/css/zenburn.css">
+
+		<!-- Printing and PDF exports -->
+		<script>
+			var link = document.createElement( 'link' );
+			link.rel = 'stylesheet';
+			link.type = 'text/css';
+			link.href = window.location.search.match( /print-pdf/gi ) ? '../lib/reveal-js/css/print/pdf.css' : '../lib/reveal-js/css/print/paper.css';
+			document.getElementsByTagName( 'head' )[0].appendChild( link );
+		</script>
+
+    <style>
+      .reveal section img { background:none; border:none; box-shadow:none; }
+    </style>
+
+	</head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+        <section>
+          <h1>Nix Workshop</h1>
+        </section>
+
+        <section>
+          <h1>Program</h1>
+          <section>
+            <ol>
+              <li>Overview</li>
+              <li>Nixlang</li>
+              <li>
+                Packaging
+                <ul>
+                  <li>Nixpkgs</li>
+                  <li>Package applications</li>
+                </ul>
+              </li>
+              <li class="fragment">Extra
+                <ul>
+                  <li>NixOS</li>
+                  <li>NixOps</li>
+                </ul>
+              </li>
+            </ol>
+          </section>
+        </section>
+
+        <section>
+          <h3>Nix is ...</h3>
+          <section>
+            <p>a <strong>build system</strong></p>
+          </section>
+          <section>
+            <h3>Properties</h3>
+            <ul>
+              <li>Reproducible
+                <ul class="fragment">
+                  <li>specify exact dependencies</li>
+                </ul>
+              </li>
+              <li>Composable
+                <ul class="fragment">
+                  <li>Expressive DSL</li>
+                </ul>
+              </li>
+            </ul>
+          </section>
+          <section>
+            <h3>Scope</h3>
+            <ul>
+              <li>Applications</li>
+              <li class="fragment">OS installations</li>
+              <li class="fragment">Cluster of machines</li>
+            </ul>
+          </section>
+        </section>
+
+        <section>
+          <h3>Components</h3>
+          <section>
+            <svg id="ecosystem-svg" width="600" height="600"></svg>
+          </section>
+        </section>
+
+        <section>
+          <h2>Dependencies</h2>
+          <section>
+            <ul>
+              <li>past</li>
+              <li>docker</li>
+              <li>nix</li>
+            </ul>
+          </section>
+          <section>
+            <img src="assets-01/2.png">
+          </section>
+        </section>
+
+        <section>
+          <h2>Deps past</h2>
+          <section>
+            <img src="assets-01/3.png">
+          </section>
+          <section>
+            <img src="assets-01/4.png">
+          </section>
+        </section>
+
+        <section>
+          <h2>Layers</h2>
+          <section>
+            <img src="assets-01/5.png">
+          </section>
+          <section>
+            <img src="assets-01/6.png">
+          </section>
+          <section>
+            <img src="assets-01/7.png">
+          </section>
+        </section>
+
+        <section>
+          <h2>Intermezzo</h2>
+
+          <section>
+            <img src="assets-01/8.png">
+          </section>
+        </section>
+
+        <section>
+          <h2>Graphs</h2>
+
+          <section>
+            <img src="assets-01/9.png">
+          </section>
+
+          <section>
+            <img src="assets-01/10.png">
+          </section>
+
+          <section>
+            <img src="assets-01/11.png">
+          </section>
+
+          <section>
+            <img src="assets-01/12.png">
+          </section>
+        </section>
+
+        <section>
+          <h1>TAKE HOME MSG</h1>
+
+          <section>
+            <ul>
+              <li>Layers do not compose well</li>
+              <li class="fragment">Graphs do</li>
+            </ul>
+           </section>
+        </section>
+			</div>
+		</div>
+
+		<script src="../lib/reveal-js/lib/js/head.min.js"></script>
+		<script src="../lib/reveal-js/js/reveal.js"></script>
+
+		<script>
+			// More info https://github.com/hakimel/reveal.js#configuration
+			Reveal.initialize({
+				history: true,
+
+				// More info https://github.com/hakimel/reveal.js#dependencies
+				dependencies: [
+					{ src: '../lib/reveal-js/plugin/markdown/marked.js' },
+					{ src: '../lib/reveal-js/plugin/markdown/markdown.js' },
+					{ src: '../lib/reveal-js/plugin/notes/notes.js', async: true },
+					{ src: '../lib/reveal-js/plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } }
+				]
+			});
+		</script>
+
+    <script src="assets-01/d3.v4.min.js"></script>
+    <script>
+      var svg = d3.select("svg"),
+          margin = 0,
+          diameter = +svg.attr("width"),
+          g = svg.append("g").attr("transform", "translate(" + diameter / 2 + "," + diameter / 2 + ")");
+
+      var color = d3.scaleLinear()
+          .domain([-1, 5])
+          .range(["hsl(152,80%,80%)", "hsl(228,30%,40%)"])
+          .interpolate(d3.interpolateHcl);
+
+      var pack = d3.pack()
+          .size([diameter - margin, diameter - margin])
+          .padding(20);
+
+      var components = {
+        "name": "NixOS Ecosystem",
+        "children": [
+          { "name": "Nix",
+            "children": [
+              { "name": "DSL", "size":50 },
+              { "name": "Drv files", "size":30 },
+              { "name": "Store", "size":30 },
+              { "name": "Build daemon", "size":50 }
+            ]
+          },
+          { "name": "nixpkgs",
+            "html": "Package collection contains some nice shit.",
+            "children": [
+              { "name": "Packages", "size":50 },
+              { "name": "Dev pkgs",
+                "children": [
+                  { "name": "Compilers", "size": 20 },
+                  { "name": "Interpreters", "size": 20 },
+                  { "name": "Precomp. libs", "size": 10 },
+                  { "name": "Tools", "size": 10 }
+                ]
+              }
+            ]
+          },
+          { "name": "NixOS",
+            "children": [
+              { "name": "Hardware conf.", "size":10 },
+              { "name": "Module sys", "size":40 }
+            ]
+          },
+          { "name": "NixOps",
+            "children": [
+              { "name": "'Terraform'", "size":30 },
+              { "name": "NixOS", "size":30 },
+            ]
+          },
+          { "name": "Tools",
+            "children": [
+              { "name": "Vulnix", "size":30 },
+              { "name": "nix-kubernetes", "size":30 },
+            ]
+          }
+        ]
+      };
+
+      (function(root) {
+        root = d3.hierarchy(root)
+            .sum(function(d) { return d.size; })
+            .sort(function(a, b) { return b.value - a.value; });
+
+        var focus = root,
+            nodes = pack(root).descendants(),
+            view;
+
+        var circle = g.selectAll("circle")
+          .data(nodes)
+          .enter().append("circle")
+            .attr("class", function(d) { return d.parent ? d.children ? "node" : "node node--leaf" : "node node--root"; })
+            .style("fill", function(d) { return d.children ? color(d.depth) : null; })
+            .on("click", function(d) {
+                if (focus !== d)  {
+                  d3.event.stopPropagation();
+                  moveFocusTo(d);
+                }
+            });
+
+        var text = g.selectAll("text")
+          .data(nodes)
+          .enter().append("text")
+            .attr("class", "label")
+            .style("fill-opacity", function(d) { return d.parent === root ? 1 : 0; })
+            .style("display", function(d) { return d.parent === root ? "inline" : "none"; })
+            .text(function(d) { return d.data.name; });
+
+        var node = g.selectAll("circle,text");
+
+        svg.on("click", function(e) {
+            d3.event.stopPropagation();
+            moveFocusTo(root);
+        });
+
+        zoomTo([root.x, root.y, root.r * 2.5 + margin]);
+//        moveFocusTo(root)
+
+        function moveFocusTo(d) {
+          if ((d.children || []).length > 0) {
+            zoom(d);
+          } else {
+            zoom(d.parent);
+          }
+        }
+
+        function zoom(d) {
+          var focus0 = focus; focus = d;
+
+          var transition = d3.transition()
+              .duration(750)
+              .tween("zoom", function(d) {
+                var i = d3.interpolateZoom(view, [focus.x, focus.y, focus.r * 2.5 + margin]);
+                return function(t) { zoomTo(i(t)); };
+              });
+
+          transition.selectAll("text")
+            .filter(function(d) { return d.parent === focus || this.style.display === "inline"; })
+              .style("fill-opacity", function(d) { return d.parent === focus ? 1 : 0; })
+              .on("start", function(d) { if (d.parent === focus) this.style.display = "inline"; })
+              .on("end", function(d) { if (d.parent !== focus) this.style.display = "none"; });
+        }
+
+        function zoomTo(v) {
+          var k = diameter / v[2]; view = v;
+          node.attr("transform", function(d) { return "translate(" + (d.x - v[0]) * k + "," + (d.y - v[1]) * k + ")"; });
+          circle.attr("r", function(d) { return d.r * k; });
+        }
+      })(components);
+    </script>
+    <style>
+      .node {
+        cursor: pointer;
+      }
+
+      .node:hover {
+        stroke: #000;
+        stroke-width: 2px;
+      }
+
+
+      .node--leaf {
+        fill: white;
+      }
+
+      .label {
+        font: 30px "Helvetica Neue", Helvetica, Arial, sans-serif;
+        text-anchor: middle;
+        text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, -1px 0 0 #fff, 0 -1px 0 #fff;
+      }
+
+      .label,
+      .node--root,
+      .node--leaf {
+      /*  pointer-events: none; */
+      }
+
+
+      #ecosystem-svg {
+        width:600px;
+        height:600px;
+      }
+    </style>
+  </body>
+</html>
