@@ -1,0 +1,529 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>02 - Nix expression language</title>
+
+		<link rel="stylesheet" href="../lib/reveal-js/css/reveal.css">
+		<link rel="stylesheet" href="../lib/reveal-js/css/theme/white.css">
+
+		<!-- Theme used for syntax highlighting of code -->
+		<link rel="stylesheet" href="../lib/reveal-js/lib/css/zenburn.css">
+
+		<!-- Printing and PDF exports -->
+		<script>
+			var link = document.createElement( 'link' );
+			link.rel = 'stylesheet';
+			link.type = 'text/css';
+			link.href = window.location.search.match( /print-pdf/gi ) ? '../lib/reveal-js/css/print/pdf.css' : '../lib/reveal-js/css/print/paper.css';
+			document.getElementsByTagName( 'head' )[0].appendChild( link );
+		</script>
+
+    <style>
+      .reveal section img { background:none; border:none; box-shadow:none; }
+    </style>
+
+	</head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+        <section>
+          <h1>Nix expression language</h1>
+          <h2>Nix Workshop</h2>
+        </section>
+
+        <section>
+          <h1>nixlang</h1>
+          <section>
+            <h2>what it is</h2>
+            <p>DSL to describe build process</p>
+          </section>
+
+          <section>
+            <h2>Goals</h2>
+            <ul>
+              <li>enable reproducible builds</li>
+              <li>enable composability</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2>output</h2>
+            <p>derivation(s)</p>
+          </section>
+
+          <section>
+            <img src="assets-02/diagram-nix-expr-drv-store.png"/>
+            <aside class="notes">
+              will get back to the store / build system in the next part.
+            </aside>
+          </section>
+         </section>
+
+        <section>
+          <h1>Nix basics</h1>
+          <section>
+            <h3>Basics</h3>
+            <ol>
+              <li>Basic types</li>
+              <li>List / AttrSet</li>
+              <li>Functions</li>
+              <li>More Syntax</li>
+            </ol>
+          </section>
+          <section>
+            <h3>Practical</h3>
+            <ul>
+              <li><code>nix-repl</code></li>
+              <li>Nix-tour</li>
+            </ul>
+          </section>
+        </section>
+
+        <section>
+          <h1><code>nix-repl</code></h1>
+          <section>
+            <img src="assets-02/nix-repl.png"/>
+          </section>
+
+          <section>
+            <h2>Installing</h2>
+
+            <pre><code data-trim>
+              [maarten@maarten-laptop:~]$ nix-env -i nix-repl
+              installing ‘nix-repl-1.11.6-2016-02-28’
+
+              [maarten@maarten-laptop:~]$ 
+            </code></pre>
+
+          </section>
+        </section>
+
+        <section>
+          <h1>Basic types</h1>
+          <section>
+            <h2>int, bool</h2>
+            <pre><code data-trim>
+              $ nix-repl
+              Welcome to Nix version 1.11.6. Type :? for help.
+
+              nix-repl> true
+              true
+
+              nix-repl> false
+              false
+
+              nix-repl> 42
+              42
+
+              nix-repl> :t true
+              a boolean
+
+              nix-repl> :t 42
+              an integer</code></pre>
+          </section>
+
+          <section>
+            <h2>strings (1/2)</h2>
+            <pre><code data-trim>
+              nix-repl> "one two three, one two three!"
+              "one two three, one two three!"
+              
+              nix-repl> ''
+                          one
+                            two
+                            three,
+                          one
+                            two,
+                            three!
+                        ''
+              "one\n  two\n  three,\none\n  two,\n  three!\n"
+            </code></pre>
+            <aside class="notes">
+              <pre>
+                - two types of strings, regular and "multiline".
+                - multiline remove leading indentation.
+              </pre>
+            </aside>
+          </section>
+          <section>
+            <h2>strings (2/2)</h2>
+            <pre><code data-trim>
+              nix-repl> name = "Maarten"
+
+              nix-repl> "Hello ${name}"
+              "Hello Maarten"
+            </code></pre>
+
+            <aside class="notes">
+              <pre>
+                - binding like this is only in available in the repl!
+                - we'll show how to bind names later.
+              </pre>
+            </aside>
+          </section>
+
+          <section>
+            <h2>Paths</h2>
+            <pre><code data-trim>
+              nix-repl> /abs/path
+              /abs/path
+
+              nix-repl> ./rel/path
+              /home/maarten/rel/path
+
+              nix-repl> ~/home/path
+              /home/maarten/home/path
+            </code></pre>
+          </section>
+
+          <section>
+            <h2>URI's</h2>
+            <pre><code data-trim>
+              nix-repl> https://google.nl
+              "https://google.nl"
+
+              nix-repl> file:///home/maarten/ding.txt
+              "file:///home/maarten/ding.txt"
+
+              nix-repl> ftp://maarten@host/path/to/file.txt
+              "ftp://maarten@host/path/to/file.txt"
+            </code></pre>
+            <pre class="fragment"><code data-trim>
+              nix-repl> :t ftp://ding/dong
+              a string
+            </code></pre>
+          </section>
+        </section>
+
+        <section>
+          <h1>Containers</h1>
+
+          <section>
+            <h2>Lists</h2>
+            <pre><code data-trim>
+              nix-repl> [ true "hello" 42 ]
+              [ true "hello" 42 ]
+
+              nix-repl>
+            </code></pre>
+          </section>
+
+          <section>
+            <h2>Attribute Sets</h2>
+            <pre><code data-trim>
+              nix-repl> {
+                        name = "Maarten";
+                        isNixCool = true;
+                        }
+              { isNixCool = true; name = "Maarten"; }
+
+              nix-repl> 
+            </code></pre>
+          </section>
+
+          <section>
+            <h2>Attibute Sets</h2>
+            <pre><code data-trim>
+              nix-repl> { x = 1; y = x; }
+            </code></pre>
+            <pre class="fragment"><code data-trim>
+              error: undefined variable ‘x’ at (string):1:14
+              nix-repl>
+            </code></pre>
+          </section>
+
+          <section>
+            <h2>Recursive Attibute Sets</h2>
+            <pre><code data-trim>
+              nix-repl> rec { x = 1; y = x; }
+              { x = 1; y = 1; }
+
+              nix-repl> 
+            </code></pre>
+          </section>
+        </section>
+
+        <section>
+          <h1>Functions</h1>
+
+          <section>
+            <h2>one arg</h2>
+            <pre><code data-trim>
+            nix-repl> x: x
+            «lambda»
+            </code></pre>
+            <pre class="fragment"><code data-trim>
+            nix-repl> (x: x) "identity"
+            "identity"
+            </code></pre>
+            <pre class="fragment"><code data-trim>
+            nix-repl> x: x + 1
+            «lambda»
+            </code></pre>
+            <pre class="fragment"><code data-trim>
+            nix-repl> (x: x + 1) 41
+            42
+            </code></pre>
+            <pre class="fragment"><code data-trim>
+            nix-repl> x: y: x + y + 1
+            «lambda»
+            </code></pre>
+          </section>
+          <section>
+            <pre><code data-trim>
+            x: (y: x + y + 1)
+            </code></pre>
+            <pre class="fragment"><code data-trim>
+            x: (y: (x + y) + 1)
+            </code></pre>
+          </section>
+          <section>
+            <pre><code data-trim>
+            nix-repl> (x: y: x + y + 1) 40 1
+            42
+            </code></pre>
+          </section>
+          <section>
+            <img src="assets-02/reduction.png"/>
+          </section>
+
+        </section>
+        <section>
+          <h1>attrset functions</h1>
+
+          <section>
+            <pre><code data-trim>
+            nix-repl> {x, y}: x+y+1
+            «lambda»
+            </code></pre>
+            <pre class="fragment"><code data-trim>
+            nix-repl> ({x, y}: x+y+1) { x = 40; y = 1; }
+            42
+            </code></pre>
+          </section>
+          <section>
+            <h2>default args</h2>
+            <pre><code data-trim>
+            nix-repl> {x ? 40, y}: x+y+1
+            «lambda»
+            </code></pre>
+            <pre class="fragment"><code data-trim>
+            nix-repl> ({x ? 40, y}: x+y+1) { y = 1; }
+            42
+            </code></pre>
+          </section>
+          <!--
+          <section>
+            <h2>extra args</h2>
+            <pre><code data-trim>
+            nix-repl> ({}: 0)
+            «lambda»
+            </code></pre>
+            <pre class="fragment"><code data-trim>
+            nix-repl> ({}: 0) {}
+            0
+            </code></pre>
+            <pre class="fragment"><code data-trim>
+            nix-repl> ({}: 0) { x = 1; }
+            error: anonymous function at (string):1:2 called with
+                   unexpected argument ‘x’, at (string):1:1
+            </code></pre>
+            <pre class="fragment"><code data-trim>
+            nix-repl> ({...}: 0) { x = 1;}
+            0
+            </code></pre>
+          </section>
+          -->
+        </section>
+        <section>
+          <h1>builtins</h1>
+          <pre><code data-trim>
+            nix-repl> builtins.attrNames builtins
+            [ "abort" "add" "addErrorContext" "all" "any" "attrNames" "attrValues" "baseNameOf" "builtins" "catAttrs" "compareVersions" "concatLists" "concatStringsSep" "currentSystem" "currentTime" "deepSeq" "derivation" "derivationStrict" "dirOf" "div" "elem" "elemAt" "false" "fetchTarball" "fetchurl" "filter" "filterSource" "findFile" "foldl'" "fromJSON" "functionArgs" "genList" "genericClosure" "getAttr" "getEnv" "hasAttr" "hashString" "head" "import" "intersectAttrs" "isAttrs" "isBool" "isFunction" "isInt" "isList" "isNull" "isString" "langVersion" "length" "lessThan" "listToAttrs" "map" "match" "mul" "nixPath" "nixVersion" "null" "parseDrvName" "pathExists" "readDir" "readFile" "removeAttrs" "replaceStrings" "scopedImport" "seq" "sort" "storeDir" "storePath" "stringLength" "sub" "substring" "tail" "throw" "toFile" "toJSON" "toPath" "toString" "toXML" "trace" "true" "tryEval" "typeOf" "unsafeDiscardOutputDependency" "unsafeDiscardStringContext" "unsafeGetAttrPos" "valueSize" ]
+          </pre></code>
+        </section>
+        <section>
+          <h1>(im)purity</h1>
+
+          <section>
+            <h2>purity</h2>
+            <ul>
+              <li>calling functions in nix is <em>pure</em></li>
+              <li class="fragment">does not influence "environment"</li>
+              <li class="fragment">composes really well</li>
+              <li class="fragment">makes debugging easy</li>
+            </ul>
+
+            <aside class="notes">
+              c
+            </aside>
+          </section>
+
+          <section>
+            <h2>impurity</h2>
+            <ul>
+              <li>How can anything be done then?</li>
+              <li class="fragment"><strong>I lied!</strong></li>
+              <li class="fragment">
+                <em>some</em> functions are impure
+                <ul>
+                  <li class="fragment">have side effects</li>
+                  <li class="fragment">(not observable from within nix)</li>
+                </ul>
+              </li>
+            </ul>
+          </section>
+
+          <section>
+            <h2>Fun's with side effects</h2>
+            <ul>
+              <li><code>toFile</code></li>
+              <li><code>derivation</code></li>
+              <li><code>fetchurl</code></li>
+              <li><code>fetchTarball</code></li>
+            </ul>
+          </section>
+        </section>
+
+        <section>
+          <h1>syntax</h1>
+          <section>
+            <h2>ITE</h2>
+            <pre><code data-trim>
+            nix-repl> if true then "yes" else "no"
+            "yes"
+
+            nix-repl> if 1 == 2 then "yes" else "no"
+            "no"
+            </code></pre>
+          </section>
+          <section>
+            <h2>let</h2>
+            <pre><code data-trim>
+              nix-repl> let
+                        x = 1;
+                        y = 2;
+                        in
+                        x+y
+              3
+            </code></pre>
+            <pre class="fragment"><code data-trim>
+              nix-repl> let x = 1; y=2; in x+y
+              3
+            </code></pre>
+            <pre class="fragment"><code data-trim>
+              nix-repl> let x = 1; y=2; z=x+y; in z
+              3
+            </code></pre>
+
+            <aside class="notes">
+              is very much like <code>rec {}</code>
+            </aside>
+          </section>
+          <section>
+            <h2>with</h2>
+            <pre><code data-trim>
+            with E1; E2
+            </code></pre>
+            <pre class="fragment"><code data-trim>
+            nix-repl> with { x = 1; y = 2;}; x + y
+            3
+            </code></pre>
+          </section>
+          <section>
+            <h2>import</h2>
+            <pre><code data-trim>
+            $ echo "{ x = 1;}" > to_import.nix
+            $ nix-repl
+            nix-repl> import ./to_import.nix
+            { x = 1; }
+            </code></pre>
+            <pre class="fragment"><code data-trim>
+            nix-repl> import &lt;nixpkgs&gt;
+            «lambda»
+            </code></pre>
+          </section>
+        </section>
+
+        <section>
+          <h1>sneak preview</h1>
+          <section>
+            <h2>using packages</h2>
+            <pre><code data-trim>
+            nix-repl> (import &lt;nixpkgs> {}).bash
+            «derivation /nix/store/flyb4cyxz0s48iq8qcdxdf2bcmgcc4cq-bash-4.3-p48.drv»
+            </code></pre>
+          </section>
+          <section>
+            <h2>creating a derivation</h2>
+            <pre><code data-trim>
+             $ cat simple.nix 
+             with (import &lt;nixpkgs> {});
+             let
+               my_shell_script = builtins.toFile "my_shell_script" ''
+                 echo "hiya" > $out
+               '';
+             in builtins.derivation {
+               name = "myderivation";
+               system = builtins.currentSystem;
+               builder = "${bash}/bin/bash";
+               args = [ my_shell_script ];
+             }
+             $ nix-repl
+             Welcome to Nix version 1.11.6. Type :? for help.
+             nix-repl> import ./simple.nix 
+             «derivation /nix/store/wrw9ygvghx0nn18gbal6irvkjw5ywv97-myderivation.drv»
+
+             nix-repl> :b import ./simple.nix 
+             these derivations will be built:
+               /nix/store/wrw9ygvghx0nn18gbal6irvkjw5ywv97-myderivation.drv
+             building path(s) ‘/nix/store/6p58wm0rwraf3f0ncm4ikq7wznwvih84-myderivation’
+             warning: you did not specify ‘--add-root’; the result might be removed by the garbage collector
+             /nix/store/6p58wm0rwraf3f0ncm4ikq7wznwvih84-myderivation
+             
+             this derivation produced the following outputs:
+               out -> /nix/store/6p58wm0rwraf3f0ncm4ikq7wznwvih84-myderivation
+             
+             nix-repl> :q
+
+             $ cat /nix/store/6p58wm0rwraf3f0ncm4ikq7wznwvih84-myderivation
+             hiya
+
+             $ cat /nix/store/wrw9ygvghx0nn18gbal6irvkjw5ywv97-myderivation.drv
+             Derive([("out","/nix/store/6p58wm0rwraf3f0ncm4ikq7wznwvih84-myderivation","","")],[("/nix/store/flyb4cyxz0s48iq8qcdxdf2bcmgcc4cq-bash-4.3-p48.drv",["out"])],["/nix/store/lln3kc65pdjc7whpr5zipvs0l4lzjzjv-my_shell_script"],"x86_64-linux","/nix/store/gabjbkwga2dhhp2wzyaxl83r8hjjfc37-bash-4.3-p48/bin/bash",["/nix/store/lln3kc65pdjc7whpr5zipvs0l4lzjzjv-my_shell_script"],[("builder","/nix/store/gabjbkwga2dhhp2wzyaxl83r8hjjfc37-bash-4.3-p48/bin/bash"),("name","myderivation"),("out","/nix/store/6p58wm0rwraf3f0ncm4ikq7wznwvih84-myderivation"),("system","x86_64-linux")])
+
+            </code></pre>
+          </section>
+        </section>
+
+        <section>
+          <h1>Play with nix</h1>
+          <section>
+            <a href="https://nixcloud.io/tour/">https://nixcloud.io/tour/</a>
+          </section>
+        </section>
+   		</div>
+		</div>
+
+		<script src="../lib/reveal-js/lib/js/head.min.js"></script>
+		<script src="../lib/reveal-js/js/reveal.js"></script>
+
+		<script>
+			// More info https://github.com/hakimel/reveal.js#configuration
+			Reveal.initialize({
+				history: true,
+
+				// More info https://github.com/hakimel/reveal.js#dependencies
+				dependencies: [
+					{ src: '../lib/reveal-js/plugin/markdown/marked.js' },
+					{ src: '../lib/reveal-js/plugin/markdown/markdown.js' },
+					{ src: '../lib/reveal-js/plugin/notes/notes.js', async: true },
+					{ src: '../lib/reveal-js/plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } }
+				]
+			});
+		</script>
+  </body>
+</html>
