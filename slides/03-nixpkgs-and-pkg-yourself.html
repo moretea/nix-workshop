@@ -1,0 +1,245 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>03 - Nixpkgs & packaging software yourself</title>
+
+		<link rel="stylesheet" href="../lib/reveal-js/css/reveal.css">
+		<link rel="stylesheet" href="../lib/reveal-js/css/theme/white.css">
+
+		<!-- Theme used for syntax highlighting of code -->
+		<link rel="stylesheet" href="../lib/reveal-js/lib/css/zenburn.css">
+
+		<!-- Printing and PDF exports -->
+		<script>
+			var link = document.createElement( 'link' );
+			link.rel = 'stylesheet';
+			link.type = 'text/css';
+			link.href = window.location.search.match( /print-pdf/gi ) ? '../lib/reveal-js/css/print/pdf.css' : '../lib/reveal-js/css/print/paper.css';
+			document.getElementsByTagName( 'head' )[0].appendChild( link );
+		</script>
+
+    <style>
+      .reveal section img { background:none; border:none; box-shadow:none; }
+    </style>
+
+	</head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+        <section>
+          <h1>Nixpkgs & packaging yourself</h1>
+          <h2>Nix Workshop</h2>
+        </section>
+
+        <section>
+          <img src="assets-03/drv-types.png">
+        </section>
+
+        <section>
+          <h1>hello world</h1>
+          <section>
+            hello.nix:
+            <pre><code data-trim data-lang="nix">
+             with (import &lt;nixpkgs> {});
+             stdenv.mkDerivation rec {
+               name = "hello-2.10";
+             
+               src = fetchurl {
+                 url = "http://ftpmirror.gnu.org/gnu/hello/${name}.tar.gz";
+                 sha256 = "0ssi1wpaf7plaswqqjwigppsg5fyh99vdlb9kzl7c9lng89ndq1i";
+               };
+             
+               doCheck = true;
+             
+               meta = {
+                 description = "A program that produces a familiar, friendly greeting";
+                 longDescription = ''
+                   GNU Hello is a program that prints "Hello, world!" when you run it.
+                   It is fully customizable.
+                 '';
+                 homepage = http://www.gnu.org/software/hello/manual/;
+                 license = stdenv.lib.licenses.gpl3Plus;
+                 maintainers = [ stdenv.lib.maintainers.eelco ];
+                 platforms = stdenv.lib.platforms.all;
+               };
+             }
+            </code></pre>
+
+          </section>
+          <section>
+            <pre><code data-trim>
+              $ nix-build hello.nix 
+              these paths will be fetched (0.04 MiB download, 0.19 MiB unpacked):
+                /nix/store/7984c712x8ksg6c26jdggg2zxf0ilymg-hello-2.10
+              fetching path ‘/nix/store/7984c712x8ksg6c26jdggg2zxf0ilymg-hello-2.10’...
+              
+              *** Downloading ‘https://cache.nixos.org/nar/16j38pprm7lxrh2hg5hkd0zlh4bnq7mcs76p3qccz1n8s4b10wln.nar.xz’ (signed by ‘cache.nixos.org-1’) to ‘/nix/store/7984c712x8ksg6c26jdggg2zxf0ilymg-hello-2.10’...
+                % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                               Dload  Upload   Total   Spent    Left  Speed
+              100 40264  100 40264    0     0   283k      0 --:--:-- --:--:-- --:--:--  284k
+              
+              /nix/store/7984c712x8ksg6c26jdggg2zxf0ilymg-hello-2.10
+            </code></pre>
+
+            <aside class="notes">
+              downloads from binary cache. whut?
+            </aside>
+          </section>
+
+          <section>
+            <img src="assets-03/binary-cache.png"/>
+          </section>
+
+          <section>
+            hello2.nix:
+            <pre><code data-trim data-lang="nix" data-noescape>
+             with (import &lt;nixpkgs> {});
+             stdenv.mkDerivation rec {
+               name = "hello-2.10";
+
+               <mark class="fragment">extra_input = "yeah";</mark>
+             
+               src = fetchurl {
+                 url = "http://ftpmirror.gnu.org/gnu/hello/${name}.tar.gz";
+                 sha256 = "0ssi1wpaf7plaswqqjwigppsg5fyh99vdlb9kzl7c9lng89ndq1i";
+               };
+             
+               doCheck = true;
+             
+               meta = {
+                 description = "A program that produces a familiar, friendly greeting";
+                 longDescription = ''
+                   GNU Hello is a program that prints "Hello, world!" when you run it.
+                   It is fully customizable.
+                 '';
+                 homepage = http://www.gnu.org/software/hello/manual/;
+                 license = stdenv.lib.licenses.gpl3Plus;
+                 maintainers = [ stdenv.lib.maintainers.eelco ];
+                 platforms = stdenv.lib.platforms.all;
+               };
+             }
+            </code></pre>
+
+          </section>
+
+          <section>
+            <pre><code data-trim data-lang="none">
+$ nix-build hello2.nix 
+these derivations will be built:
+  /nix/store/vdwcn4bf8aacdn0k61ay13np1i80q1jn-hello-2.10.drv
+these paths will be fetched (0.69 MiB download, 0.69 MiB unpacked):
+  /nix/store/3x7dwzq014bblazs7kq20p9hyzz0qh8g-hello-2.10.tar.gz
+fetching path &lsquo;/nix/store/3x7dwzq014bblazs7kq20p9hyzz0qh8g-hello-2.10.tar.gz&rsquo;...
+
+*** Downloading &lsquo;https://cache.nixos.org/nar/0yc68z03plkyms2vgr4f8byya75zcgqzbqsmbvazv8cf1fi70vdz.nar.xz&rsquo; (signed by &lsquo;cache.nixos.org-1&rsquo;) to &lsquo;/nix/store/3x7dwzq014bblazs7kq20p9hyzz0qh8g-hello-2.10.tar.gz&rsquo;...
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  709k  100  709k    0     0   409k      0  0:00:01  0:00:01 --:--:--  409k
+
+building path(s) &lsquo;/nix/store/pfzsak6gccc88dx7x62fcyw684w9ixc0-hello-2.10&rsquo;
+unpacking sources
+unpacking source archive /nix/store/3x7dwzq014bblazs7kq20p9hyzz0qh8g-hello-2.10.tar.gz
+source root is hello-2.10
+setting SOURCE_DATE_EPOCH to timestamp 1416139241 of file hello-2.10/ChangeLog
+patching sources
+configuring
+configure flags: --disable-dependency-tracking --prefix=/nix/store/pfzsak6gccc88dx7x62fcyw684w9ixc0-hello-2.10  
+checking for a BSD-compatible install... /nix/store/lcwdbh37ha51z86c62mm65vbcfc990dd-coreutils-8.25/bin/install -c
+checking whether build environment is sane... yes
+checking for a thread-safe mkdir -p... /nix/store/lcwdbh37ha51z86c62mm65vbcfc990dd-coreutils-8.25/bin/mkdir -p
+checking for gawk... gawk
+checking for gcc... gcc
+LOTS OF OUTPUT
+LOTS OF OUTPUT
+LOTS OF OUTPUT
+ /nix/store/lcwdbh37ha51z86c62mm65vbcfc990dd-coreutils-8.25/bin/install -c -m 644 hello.1 '/nix/store/pfzsak6gccc88dx7x62fcyw684w9ixc0-hello-2.10/share/man/man1'
+make[3]: Leaving directory '/tmp/nix-build-hello-2.10.drv-0/hello-2.10'
+make[2]: Leaving directory '/tmp/nix-build-hello-2.10.drv-0/hello-2.10'
+make[1]: Leaving directory '/tmp/nix-build-hello-2.10.drv-0/hello-2.10'
+post-installation fixup
+shrinking RPATHs of ELF executables and libraries in /nix/store/pfzsak6gccc88dx7x62fcyw684w9ixc0-hello-2.10
+shrinking /nix/store/pfzsak6gccc88dx7x62fcyw684w9ixc0-hello-2.10/bin/hello
+gzipping man pages in /nix/store/pfzsak6gccc88dx7x62fcyw684w9ixc0-hello-2.10
+stripping (with flags -S) in /nix/store/pfzsak6gccc88dx7x62fcyw684w9ixc0-hello-2.10/bin 
+patching script interpreter paths in /nix/store/pfzsak6gccc88dx7x62fcyw684w9ixc0-hello-2.10
+/nix/store/pfzsak6gccc88dx7x62fcyw684w9ixc0-hello-2.10
+            </code></pre>
+
+            <pre class="fragment"><code data-trim>
+              $ nix-build hello2.nix 
+              /nix/store/pfzsak6gccc88dx7x62fcyw684w9ixc0-hello-2.10
+            </code></pre>
+          </section>
+        </section>
+
+        <section>
+          <h1>Ruby</h1>
+          <section>
+            nokogiri (xml lib)
+          </section>
+
+          <section>
+            <h2>Create gemfile</h2>
+            Gemfile
+            <pre><code data-trim>
+              source "https://rubygems.org"
+              gem "nokogiri"
+            </code></pre>
+          </section>
+
+          <section>
+            <h2>Lock</h2>
+            <pre><code data-trim>
+              $(nix-build  '&lt;nixpkgs>' -A bundler)/bin/bundle lock
+            </code></pre>
+
+            <h2>Bundix</h2>
+            <pre><code data-trim>
+              $(nix-build '&lt;nixpkgs>' -A bundix)/bin/bundix
+            </code></pre>
+          </section>
+
+          <section>
+            <h2>default.nix</h2>
+            <pre><code data-trim data-lang="nix">
+              with (import &lt;nixpkgs> {});
+              let
+                env = bundlerEnv {
+                  name = "your-package-env";
+                  inherit ruby;
+                  gemfile = ./Gemfile;
+                  lockfile = ./Gemfile.lock;
+                  gemset = ./gemset.nix;
+                };
+              in stdenv.mkDerivation {
+                 name = "your-package";
+                 buildInputs = [env ruby];
+              }
+            </code></pre>
+          </section>
+       </section>
+   		</div>
+		</div>
+
+		<script src="../lib/reveal-js/lib/js/head.min.js"></script>
+		<script src="../lib/reveal-js/js/reveal.js"></script>
+
+		<script>
+			// More info https://github.com/hakimel/reveal.js#configuration
+			Reveal.initialize({
+				history: true,
+
+				// More info https://github.com/hakimel/reveal.js#dependencies
+				dependencies: [
+					{ src: '../lib/reveal-js/plugin/markdown/marked.js' },
+					{ src: '../lib/reveal-js/plugin/markdown/markdown.js' },
+					{ src: '../lib/reveal-js/plugin/notes/notes.js', async: true },
+					{ src: '../lib/reveal-js/plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } }
+				]
+			});
+		</script>
+  </body>
+</html>
