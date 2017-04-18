@@ -14,7 +14,14 @@
     - content presentation FOSDEM
 
 ## Nix language
-  - Semantics
+  - What is it?
+    - DSL to describe builds
+    - Goals
+      - Reproducible builds
+      - Enable composition
+    - Output (drv's)
+    - How nix / drv's / store relate.
+  - Goal
     - build datastructure
     - pure lazy program --> 1 side effect: generate derivations
   - Types (shown in shell)
